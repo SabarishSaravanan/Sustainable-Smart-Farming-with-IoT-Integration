@@ -29,7 +29,7 @@ The project also integrates a fertilizer control mechanism that dispenses NPK nu
 - **ESP8266WiFi Library**: For connecting to WiFi.
 - **ESP8266HTTPClient Library**: For making HTTP requests to fetch weather data.
 - **ArduinoJson Library**: For parsing the JSON response from the OpenWeather API.
-- **Adafruit MQTT Library**: *(Optional)* For integrating MQTT for remote control (future enhancement).
+- **Adafruit MQTT Library**: For integrating MQTT for remote control.
 
 ## System Architecture
 
