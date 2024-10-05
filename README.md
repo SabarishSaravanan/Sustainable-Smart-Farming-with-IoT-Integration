@@ -33,8 +33,7 @@ The project also integrates a fertilizer control mechanism that dispenses NPK nu
 
 ## System Architecture
 
-![System Architecture](smart_agriculture_system.jpg)
-
+![System Architecture](https://github.com/SabarishSaravanan/Sustainable-Smart-Farming-with-IoT-Integration/blob/main/System%20Architecture.jpg)
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
