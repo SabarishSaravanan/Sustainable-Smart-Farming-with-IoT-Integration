@@ -1,13 +1,20 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
+#include <Adafruit_MQTT_Client.h>
 
-const char* ssid = "sabari";
-const char* password = "Sabarish02";
-const char* weatherAPIKey = "API key"; //get API key from the openweather.org
-const char* weatherLocation = "City name";
+const char* ssid = "SSID";
+const char* password = "PASSWORD";
+const char* weatherAPIKey = "API KEY"; //get API key from the openweather.org
+const char* weatherLocation = "CITY NAME"; 
 const int moistureSensorPin = A0; // Replace with the actual pin connected to the soil moisture sensor
 const int motorPin = D2; // Replace with the actual pin connected to the motor
+
+const int FertilizerMotor = D3; // Pin connected to the motor
+int threshold = 80;      // Threshold value
+unsigned long motorStartTime = 0;
+const unsigned long motorDuration = 5000; // 5 seconds
+
 
 const char* host = "api.openweathermap.org";
 const int httpPort = 80;
@@ -15,6 +22,7 @@ const String url = "/data/2.5/weather?q=" + String(weatherLocation) + "&appid=" 
 
 void setup() {
   Serial.begin(115200);
+  pinMode(FertilizerMotor, OUTPUT);
   WiFi.begin(ssid, password);
   Serial.print("Connecting to WiFi");
 
@@ -113,7 +121,29 @@ void controlMotor(bool shouldTurnOnMotor) {
   digitalWrite(motorPin, shouldTurnOnMotor ? HIGH : LOW);
 }
 
-void loop() {
+void loop() 
+{
+
+    if (Serial.available() > 0) 
+ {
+    int value = Serial.parseInt(); // Read the integer value from Serial Monitor
+
+    if (value < threshold) 
+    {
+      digitalWrite(FertilizerMotor, HIGH); // Turn on the motor
+      motorStartTime = millis();    // Record the start time
+      Serial.println("FertilizerMotor turned on!");
+
+      // Wait for 5 seconds
+      delay(motorDuration);
+
+      // Turn off the motor after 5 seconds
+      digitalWrite(FertilizerMotor, LOW); // Turn off the motor
+      Serial.println("FertilizerMotor turned off.");
+    }
+ } 
+
+
   float rainfall = getWeatherRainfall();
   bool isMoist = isSoilMoist();
   float temperature = getWeatherTemperature();
@@ -128,18 +158,27 @@ void loop() {
   Serial.print(temperature);
   Serial.println(" °C");
 
-  // Motor control logic
-if (rainfall > 0.0 && !isMoist) {
-  controlMotor(false); // Turn off the motor
-  Serial.println("Motor turned off (Rain and No Moisture)");
-} else if (rainfall == 0.0 && !isMoist) {
-  controlMotor(true);  // Turn on the motor
-  Serial.println("Motor turned on (No Rain and No Moisture)");
-} else {
-  controlMotor(false); // Turn off the motor
-  Serial.println("Motor turned off (Other Conditions)");
-}
-
+  
+  // Scenario 1: Turn off the motor if it's raining and the soil is dry
+  if (rainfall > 0.0 && !isMoist) {
+    controlMotor(false); // Turn off the motor
+    Serial.println("Scenario 1: Motor turned off,it's raining and the soil is dry");
+  }
+  // Scenario 2: Turn off the motor if it's raining and the soil is moist
+  else if (rainfall > 0.0 && isMoist) {
+    controlMotor(false); // Turn off the motor
+    Serial.println("Scenario 2: Motor turned off,it's raining and the soil is moist");
+  }
+  // Scenario 3: Turn on the motor if it's not raining and the soil is dry
+  else if (rainfall == 0.0 && !isMoist) {
+    controlMotor(true); // Turn on the motor
+    Serial.println("Scenario 3: Motor turned on,it's not raining and the soil is dry");
+  }
+  // Scenario 4: Turn off the motor if it's not raining and the soil is moist
+  else if (rainfall == 0.0 && isMoist) {
+    controlMotor(false); // Turn off the motor
+    Serial.println("Scenario 4: Motor turned off,it's not raining and the soil is moist");
+  }
 
   delay(5000);
 }
