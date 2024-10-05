@@ -4,8 +4,8 @@
 
 const char* ssid = "sabari";
 const char* password = "Sabarish02";
-const char* weatherAPIKey = "5e3b2e4ec6c352007023cd9181c4171c";
-const char* weatherLocation = "Salem";
+const char* weatherAPIKey = "API key"; //get API key from the openweather.org
+const char* weatherLocation = "City name";
 const int moistureSensorPin = A0; // Replace with the actual pin connected to the soil moisture sensor
 const int motorPin = D2; // Replace with the actual pin connected to the motor
 
@@ -75,6 +75,40 @@ bool isSoilMoist() {
   }
 }
 
+float getWeatherTemperature() {
+  WiFiClient client;
+  HTTPClient http;
+  
+  http.begin(client, host, httpPort, url);
+  
+  int httpCode = http.GET();
+  
+  if (httpCode > 0) {
+    if (httpCode == HTTP_CODE_OK) {
+      DynamicJsonDocument doc(1024);
+      DeserializationError error = deserializeJson(doc, http.getString());
+      
+      if (error) {
+        Serial.println("Failed to parse JSON payload");
+        return -100.0;
+      }
+      
+      float temperature = doc["main"]["temp"].as<float>();
+      temperature -= 273.15;
+      
+      return temperature;
+    }
+    else {
+      Serial.printf("HTTP request failed with error code: %d\n", httpCode);
+      return -100.0;
+    }
+  }
+  
+  http.end();
+  
+  return -100.0;
+}
+
 void controlMotor(bool shouldTurnOnMotor) {
   digitalWrite(motorPin, shouldTurnOnMotor ? HIGH : LOW);
 }
@@ -82,12 +116,17 @@ void controlMotor(bool shouldTurnOnMotor) {
 void loop() {
   float rainfall = getWeatherRainfall();
   bool isMoist = isSoilMoist();
+  float temperature = getWeatherTemperature();
 
   Serial.print("Weather: ");
   Serial.println(rainfall);
 
   Serial.print("Moisture Sensor: ");
   Serial.println(isMoist);
+
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.println(" °C");
 
   // Motor control logic
 if (rainfall > 0.0 && !isMoist) {
